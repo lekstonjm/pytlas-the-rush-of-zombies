@@ -29,9 +29,14 @@ class Knife(object):
     object.__init__(self)
     self.attack = 1
     self.is_distant = False
-  def hit(self, zombie):
+  def hit(self, zombie, agent):
     if zombie.state == zombie.CONTACT:
       zombie.damage(self.attack)
+      agent.answer('scroutch! ... grrreu')
+    else:
+      agent.answer('ffffffwit...')
+  def reload(self, zombie, agent):
+    pass
 
 class Pistol(object):
   def __init__(self):
@@ -40,25 +45,37 @@ class Pistol(object):
     self.is_distant = True
     self.number = 0
     self.limit = 2
-  def hit(self, zombie):
+  def hit(self, zombie, agent):
     if (self.number < self.limit):
       self.number = self.number + 1
       zombie.damage(self.attack)
-  def reload(self, zombie):
+      agent.answer('PAN! ... grrreu')
+    else:
+      agent.answer('click!')
+
+  def reload(self, zombie, agent):
     self.number = 0
+    agent.answer('click clack!')
+
 
 class Player(object):
   def __init__(self, life):
     object.__init__(self)
     self.life = life
-    self.killed = False
+    self.is_dead = False
     self.weapon = None
-  def damage(self, amount):
+
+  def damage(self, amount,agent):
+    if self.is_dead: return
     self.life = self.life - amount
+    agent.answer('You receive {0} damage. You have {1} life left'.format(amount, self.life))
     if self.life < 0:
-      self.killed = True
-  def heal(self, amount):
-    if self.killed : return
+      self.is_dead = True
+      agent.answer('You are dead ... or worse ... undead')
+    
+  def heal(self, amount, agent):
+    if self.is_dead : return
+    agent.answer('You receive {0} healing. You have {1} life left'.format(amount, self.life))
     self.life = self.life + amount
 
 class Zombie(object):
@@ -74,9 +91,9 @@ class Zombie(object):
     self.defense = defense
     self.loot = loot
     self.state = self.MOVING
-    self.overkilled = False
+    self.is_overkilled = False
   def update(self, player, agent):
-    if self.overkilled: return
+    if self.is_overkilled: return
     if (self.state == self.MOVING):
       delay = (datetime.now() - self.reference).total_seconds()
       if (delay > self.speed):
@@ -84,14 +101,13 @@ class Zombie(object):
         self.state = self.CONTACT
     elif (self.state == self.CONTACT):
       delay = (datetime.now() - self.reference).total_seconds()
-      if (delay > self.attack_speed):
-        damage = self.attack
-        player.damage(self.attack)
-        agent.answer('{0} hits you delease {1}'.format(self.name, damage))
-        self.reference = datetime.now()      
+      if (delay > self.attack_speed):        
+        agent.answer('{0} is biting you'.format(self.name))
+        player.damage(self.attack, agent)
+        self.reference = datetime.now()        
   def damage(self, amount):
     if self.defense < amount:
-      self.overkilled = True
+      self.is_overkilled = True
 
 class RushOfZombiesGame(threading.Thread):
   def __init__(self, agent):
@@ -100,26 +116,46 @@ class RushOfZombiesGame(threading.Thread):
     self.loop = True
     self.plan_zombie_spawn()
     self.zombies = []
+    self.player = Player(20)
+
+  def stop(self):  
+    self.loop = False
+
   def run(self):
     while(self.loop):
+      if not self.player.is_dead:
+        self.update_zombies()
+        self.spawn_zombie()        
       time.sleep(1.0)
-  def stop(self):
-    self.loop = False
+
+  def update_zombies(self):
+    overkilled_zombies = []
+    for zombie in self.zombies:
+      if zombie.is_overkilled:
+        overkilled_zombies.append(zombie)
+      else:
+        zombie.update(self.player, self.agent)
+    for overkilled_zombie in overkilled_zombies:
+      self.zombies.remove(overkilled_zombie)
+
+  def spawn_zombie(self):
+      if self.check_zombie_spawn():
+        zombie = Zombie("Mike", 4, 1, 3, 0, Pistol())
+        self.zombies.append(zombie)
+        self.agent.answer('grrrrr! Mike the chocked wet zombie is coming')
+        self.plan_zombie_spawn()
+
   def plan_zombie_spawn(self):
     self.zombie_spawn_date_reference = datetime.now() 
     self.zombie_spawn_delay =  (random.random() * 10.0 + 1)
+  
   def check_zombie_spawn(self):
     current_delay = (datetime.now() - self.zombie_spawn_date_reference).total_seconds() 
     if  current_delay > self.zombie_spawn_delay:
       return True
     else:
       return False
-  def spawn_zombie(self):
-      if self.check_zombie_spawn():
-
-        self.agent.answer('grrrrr')
-        self.plan_zombie_spawn()
-
+  
 
 agents =  {}
 games = {}
