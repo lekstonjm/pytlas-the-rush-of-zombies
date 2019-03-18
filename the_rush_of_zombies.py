@@ -5,6 +5,7 @@ import threading
 from pytlas import on_agent_created, on_agent_destroyed, training, intent, translations
 from datetime import datetime
 from uuid import uuid4
+from .weapons import *
 
 # This entity will be shared among training data since it's not language specific
 
@@ -23,40 +24,6 @@ def en_data(): return """
 %[rush_of_zombies/quit]
   quit the game
 """
-
-class Knife(object):
-  def __init__(self):
-    object.__init__(self)
-    self.attack = 1
-    self.is_distant = False
-  def hit(self, zombie, agent):
-    if zombie.state == zombie.CONTACT:
-      zombie.damage(self.attack)
-      agent.answer('scroutch! ... grrreu')
-    else:
-      agent.answer('ffffffwit...')
-  def reload(self, zombie, agent):
-    pass
-
-class Pistol(object):
-  def __init__(self):
-    object.__init__(self)
-    self.attack = 1
-    self.is_distant = True
-    self.number = 0
-    self.limit = 2
-  def hit(self, zombie, agent):
-    if (self.number < self.limit):
-      self.number = self.number + 1
-      zombie.damage(self.attack)
-      agent.answer('PAN! ... grrreu')
-    else:
-      agent.answer('click!')
-
-  def reload(self, zombie, agent):
-    self.number = 0
-    agent.answer('click clack!')
-
 
 class Player(object):
   def __init__(self, life):
@@ -77,37 +44,6 @@ class Player(object):
     if self.is_dead : return
     agent.answer('You receive {0} healing. You have {1} life left'.format(amount, self.life))
     self.life = self.life + amount
-
-class Zombie(object):
-  def __init__(self, name, speed, attack_speed, attack , defense, loot):
-    object.__init__(self)
-    self.MOVING = 0
-    self.CONTACT = 1
-    self.name = name
-    self.reference = datetime.now()
-    self.speed = speed
-    self.attack_speed = attack_speed
-    self.attack = attack
-    self.defense = defense
-    self.loot = loot
-    self.state = self.MOVING
-    self.is_overkilled = False
-  def update(self, player, agent):
-    if self.is_overkilled: return
-    if (self.state == self.MOVING):
-      delay = (datetime.now() - self.reference).total_seconds()
-      if (delay > self.speed):
-        self.reference = datetime.now()
-        self.state = self.CONTACT
-    elif (self.state == self.CONTACT):
-      delay = (datetime.now() - self.reference).total_seconds()
-      if (delay > self.attack_speed):        
-        agent.answer('{0} is biting you'.format(self.name))
-        player.damage(self.attack, agent)
-        self.reference = datetime.now()        
-  def damage(self, amount):
-    if self.defense < amount:
-      self.is_overkilled = True
 
 class RushOfZombiesGame(threading.Thread):
   def __init__(self, agent):
@@ -205,7 +141,7 @@ def on_play(req):
   game = RushOfZombiesGame(agents[req.agent.id])
   games[req.agent.id] = game
   game.start()
-  req.agent.answer(req._('Don\'t be afraid ... They are coming'))
+  req.agent.answer(req._('Don\'t panic! ... They are coming'))
   return req.agent.done()
 
 @intent('rush_of_zombies/quit')
