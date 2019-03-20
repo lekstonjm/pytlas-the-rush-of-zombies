@@ -2,132 +2,163 @@ from random import randint
 
 class WeaponFactory(object):
     def create_weapon(self):
-        index = randint(1,7)
+        index = randint(1,8)
+        if index == 1:
+            return Knife()
+        elif index == 2:
+            return BaseballBat()
+        elif index == 3:
+            return Katana()
+        elif index == 4:
+            return Crossbow()
+        elif index == 5:
+            return Revolver()
+        elif index == 6:
+            return Pistol()
+        elif index == 7:
+            return Shootgun()
+        elif index == 8:
+            return Grenade()
 
-class Knife(object):
+class Weapon(object):    
     def __init__(self):
-        object.__init__(self)
+        self.attack_level = 1
+        self.hit_message = ""
+        self.miss_message = ""
+    def use(self, game, zombi_name=None):
+        pass
+    def reload(self, game):        
+        pass
+
+class ContactWeapon(Weapon):
+    def __init__(self):
+        Weapon.__init__(self)
+    def use(self, game, zombi_name = None):
+        zombie = None
+        if zombi_name:
+            zombie = game.zombies.get_first(zombi_name)        
+        if zombie and zombie.state == zombie.CONTACT:
+            zombie.damage(self.attack_level)
+            game.agent.answer(self.hit_message)
+        else:
+            game.agent.answer(self.miss_message)    
+        
+class DistantWeapon(Weapon):
+    def __init__(self):
+        Weapon.__init__(self)
+        self.use_limit = 0
+        self.use_number = 0    
+        self.out_of_ammo_message = ""
+        self.reload_message = ""
+    def use(self, game, zombi_name = None):
+        zombie = None
+        if zombi_name:
+            zombie = game.zombies.get_first(zombi_name)        
+        if zombie:
+            if self.use_number > self.use_limit :
+                game.agent.answer(self.out_of_ammo_message)
+            else:
+                self.use_number += 1
+                zombie.damage(self.attack_level)
+                game.agent.answer(self.hit_message)
+        else:
+            game.agent.answer(self.miss_message)
+    def reload(self, game):
+        self.use_number = 0
+        game.agent.answer(self.reload_message)
+        pass
+
+class DisposableWeapon(Weapon):
+    def __init__(self):
+        Weapon.__init__(self)
+    def use(self, game, zombi_name=None):
+        damage = self.attack_level
+
+
+class Knife(ContactWeapon):
+    def __init__(self):
+        ContactWeapon.__init__(self)
         self.name = "Knife"
-        self.attack = 1
-        self.is_distant = False
+        self.attack_level = 1
+        self.hit_message = "scroutch"
+        self.miss_message = "ffffffweet"
 
-    def hit(self, zombie, agent):
-        if zombie.state == zombie.CONTACT:
-            zombie.damage(self.attack)
-            agent.answer('scroutch! ...')
-        else:
-            agent.answer('ffffffwit...')
-
-    def reload(self, zombie, agent):
-        pass
-
-
-class BaseballBat(object):
+class BaseballBat(ContactWeapon):
     def __init__(self):
-        object.__init__(self)
+        ContactWeapon.__init__(self)
+        self.name = "Baseball bat"
         self.attack = 2
-        self.is_distant = False
+        self.hit_message = "PAF"
+        self.miss_message = "fffouuuuuu"
 
-    def hit(self, zombie, agent):
-        if zombie.state == zombie.CONTACT:
-            zombie.damage(self.attack)
-            agent.answer('PAF! ...')
-        else:
-            agent.answer('ffffffwit...')
-
-    def reload(self, zombie, agent):
-        pass
-
-
-class Katana(object):
+class Katana(ContactWeapon):
     def __init__(self):
-        object.__init__(self)
+        ContactWeapon.__init__(self)
+        self.name = "Katana"
         self.attack = 3
-        self.is_distant = False
-
-    def hit(self, zombie, agent):
-        if zombie.state == zombie.CONTACT:
-            zombie.damage(self.attack)
-            agent.answer('Tchac! ...')
-        else:
-            agent.answer('ffffffwit...')
-
-    def reload(self, zombie, agent):
-        pass
+        self.hit_message = "Tchac"
+        self.miss_message = "shhwwinnnng"
 
 
-class Revolver(object):
+class Crossbow(DistantWeapon):
     def __init__(self):
-        object.__init__(self)
+        DistantWeapon.__init__(self)
+        self.name = "Crossbow"
+        self.attack = 1
+        self.use_limit = 1
+        self.hit_message = "Chhh poc"
+        self.miss_message = "sssssss"
+        self.out_of_ammo_message = "click"
+        self.reload_message = "ccrrrriiii Clic"
+
+class Revolver(DistantWeapon):
+    def __init__(self):
+        DistantWeapon.__init__(self)
+        self.name = "Revolver"
+        self.attack = 3
+        self.use_limit = 6
+        self.hit_message = "PAN"
+        self.miss_message = "fffwweeeee"
+        self.out_of_ammo_message = "clic"
+        self.reload_message = "clic clac"
+
+
+class Pistol(DistantWeapon):
+    def __init__(self):
+        DistantWeapon.__init__(self)
+        self.name = "Pistol"
         self.attack = 2
-        self.is_distant = True
-        self.number = 0
-        self.limit = 6
-
-    def hit(self, zombie, agent):
-        if (self.number < self.limit):
-            self.number = self.number + 1
-            zombie.damage(self.attack)
-            agent.answer('PAN! ...')
-        else:
-            agent.answer('click!')
-
-    def reload(self, zombie, agent):
-        self.number = 0
-        agent.answer('click clack!')
+        self.use_limit = 15
+        self.hit_message = "pan"
+        self.miss_message = "fffwweeeee"
+        self.out_of_ammo_message = "clic"
+        self.reload_message = "clic clac"
 
 
-class Pistol(object):
+class Shootgun(DistantWeapon):
     def __init__(self):
-        object.__init__(self)
-        self.attack = 2
-        self.is_distant = True
-        self.number = 0
-        self.limit = 15
-
-    def hit(self, zombie, agent):
-        if (self.number < self.limit):
-            self.number = self.number + 1
-            zombie.damage(self.attack)
-            agent.answer('PAN! ...')
-        else:
-            agent.answer('click!')
-
-    def reload(self, zombie, agent):
-        self.number = 0
-        agent.answer('click clack!')
-
-
-class Shootgun(object):
-    def __init__(self):
-        object.__init__(self)
+        DistantWeapon.__init__(self)
+        self.name = "Shootgun"
         self.attack = 4
-        self.is_distant = True
-        self.number = 0
-        self.limit = 2
-
-    def hit(self, zombie, agent):
-        if (self.number < self.limit):
-            self.number = self.number + 1
-            zombie.damage(self.attack)
-            agent.answer('BAM! ...')
-        else:
-            agent.answer('click!')
-
-    def reload(self, zombie, agent):
-        self.number = 0
-        agent.answer('click clack!')
+        self.use_limit = 2
+        self.hit_message = "BAM"
+        self.miss_message = "..."
+        self.out_of_ammo_message = "clic"
+        self.reload_message = "clic clac"
 
 
 class Grenade(object):
     def __init__(self):
-        object.__init__(self)
+        DistantWeapon.__init__(self)
+        self.name = "Grenade"
         self.attack = 10
-        self.is_distant = True
-        self.number = 0
-        self.limit = 1
+        self.use_limit = 1
+        self.hit_message = "BOOM"
+        self.miss_message = "..."
+        self.out_of_ammo_message = "clic"
+        self.reload_message = "clic clac"
 
-    def hit(self, zombie, agent):
+    def use(self, zombie, agent):
         if (self.number < self.limit):
             self.number = self.number + 1
             zombie.damage(self.attack)

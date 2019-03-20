@@ -1,7 +1,6 @@
 from random import random, randint
 from datetime import datetime
 
-
 class Zombie(object):
     def __init__(self, name, description, slowness, attack_rate, attack_level, defense_level):
         object.__init__(self)
@@ -53,7 +52,7 @@ class ZombieFactory(object):
         elif index == 6:
             return CarlTheRunner()
 
-
+    
 class BoozoTheClown(Zombie):
     def __init__(self):
         Zombie.__init__(self, "Boozo", "The decayed clown",
