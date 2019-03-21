@@ -3,7 +3,7 @@ import time
 import random
 from datetime import datetime
 from .zombies import ZombieFactory
-from .weapons import Pistol
+from .weapons import WeaponFactory
 
 class Player(object):
   def __init__(self, life):
@@ -47,6 +47,46 @@ class ZombiePack(object):
         for zombie in burried:
             self.zombies.remove(zombie)
 
+class Scheduler(object):
+    def __init__(self, period_min, period_max):
+        self.reference = datetime.now()
+        self.period = [period_min, period_max]
+        self.delay = 0
+    def plan(self):
+        self.reference = datetime.now()
+        self.delay = (random.random() * (self.period[1] - self.period[0]) + self.period[0])
+    def check(self):
+        delay = (datetime.now() -self.reference).total_seconds()
+        if delay > self.delay:
+            return True
+        else:
+            return False    
+
+class ZombieSpawner(object):
+    def __init__(self):
+        self.wanderer = Scheduler(5,10)
+        self.pack = Scheduler(20,30)
+        self.wanderer.plan()
+        self.pack.plan()
+        self.pack_size = 5.0
+    
+    def update(self, game):
+        if self.pack.check():
+            self.spawn_pack(game, self.pack_size)
+            self.pack.plan()
+            self.wanderer.plan()
+        if self.wanderer.check():
+            self.spawn_wanderer(game)
+            self.wanderer.plan()
+    
+    def spawn_wanderer(self, game):
+        zombie = game.zombie_factory.spawn_zombie()
+        game.zombies_pack.add(zombie)
+        game.agent.answer('{0} {1} {2}'.format(zombie.spawn_message, zombie.name, zombie.description))
+    
+    def spawn_pack(self, game, pack_size):
+        for _index in range(pack_size):
+            self.spawn_wanderer(game)
 
 class Game(threading.Thread):
     def __init__(self, agent):
@@ -54,8 +94,9 @@ class Game(threading.Thread):
         self.agent = agent
         self.loop = True
         self.zombie_factory = ZombieFactory()
+        self.weapon_factory = WeaponFactory()
         self.zombies_pack = ZombiePack()
-        self.plan_zombie_spawn()
+        self.zombies_spawner = ZombieSpawner()
         self.player = Player(20)
 
     def stop(self):
@@ -65,24 +106,7 @@ class Game(threading.Thread):
         while(self.loop):
             if not self.player.is_dead:
                 self.zombies_pack.update(self)
-                self.spawn_zombie()
+                self.zombies_spawner.update(self)
             time.sleep(1.0)
 
-    def spawn_zombie(self):
-        if self.check_zombie_spawn():
-            zombie = self.zombie_factory.spawn_zombie()
-            self.zombies_pack.add(zombie)
-            self.agent.answer('grrrrr! Mike the chocked wet zombie is coming')
-            self.plan_zombie_spawn()
 
-    def plan_zombie_spawn(self):
-        self.zombie_spawn_date_reference = datetime.now()
-        self.zombie_spawn_delay = (random.random() * 10.0 + 1)
-
-    def check_zombie_spawn(self):
-        current_delay = (datetime.now() -
-                         self.zombie_spawn_date_reference).total_seconds()
-        if current_delay > self.zombie_spawn_delay:
-            return True
-        else:
-            return False
