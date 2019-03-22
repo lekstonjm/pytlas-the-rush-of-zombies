@@ -2,8 +2,21 @@ import threading
 import time
 import random
 from datetime import datetime
-from .zombies import ZombieFactory
+from .zombies import ZombieFactory, ZombiePack, ZombieSpawner
 from .weapons import WeaponFactory
+from .items import ItemFactory
+
+class LootFactory(object):
+    def __init__(self):
+        self.weapon_factory = WeaponFactory()
+        self.item_factory = ItemFactory()
+    
+    def create_loot(self):
+        number = random.randint(1,2)
+        if number == 1:
+            return self.item_factory.create_item()
+        else: 
+            return self.weapon_factory.create_weapon()
 
 class Player(object):
   def __init__(self, life):
@@ -11,6 +24,7 @@ class Player(object):
     self.life = life
     self.is_dead = False
     self.weapon = None
+    self.item = None
 
   def damage(self, amount,agent):
     if self.is_dead: return
@@ -25,82 +39,45 @@ class Player(object):
     agent.answer('You receive {0} healing. You have {1} life left'.format(amount, self.life))
     self.life = self.life + amount
   
-class ZombiePack(object):
+class Floor(object):
     def __init__(self):
-        self.zombies = []
-
-    def add(self, zombie):
-        self.zombies.append(zombie)
-
-    def get_first(self, zombie_name):
-        for zombie in self.zombies:
-            if zombie.name == zombie_name:
-                return zombie
-
-    def update(self, game):
-        burried = []
-        for zombie in self.zombies:
-            if zombie.dead_again:
-                burried.append(zombie)
-            else:
-                zombie.update(game.player, game.agent)
-        for zombie in burried:
-            self.zombies.remove(zombie)
-
-class Scheduler(object):
-    def __init__(self, period_min, period_max):
-        self.reference = datetime.now()
-        self.period = [period_min, period_max]
-        self.delay = 0
-    def plan(self):
-        self.reference = datetime.now()
-        self.delay = (random.random() * (self.period[1] - self.period[0]) + self.period[0])
-    def check(self):
-        delay = (datetime.now() -self.reference).total_seconds()
-        if delay > self.delay:
-            return True
-        else:
-            return False    
-
-class ZombieSpawner(object):
-    def __init__(self):
-        self.wanderer = Scheduler(5,10)
-        self.pack = Scheduler(20,30)
-        self.wanderer.plan()
-        self.pack.plan()
-        self.pack_size = 5.0
+        self.drop = []
+        self.drop_timeout = 10
     
-    def update(self, game):
-        if self.pack.check():
-            self.spawn_pack(game, self.pack_size)
-            self.pack.plan()
-            self.wanderer.plan()
-        if self.wanderer.check():
-            self.spawn_wanderer(game)
-            self.wanderer.plan()
-    
-    def spawn_wanderer(self, game):
-        zombie = game.zombie_factory.spawn_zombie()
-        game.zombies_pack.add(zombie)
-        game.agent.answer('{0} {1} {2}'.format(zombie.spawn_message, zombie.name, zombie.description))
-    
-    def spawn_pack(self, game, pack_size):
-        for _index in range(pack_size):
-            self.spawn_wanderer(game)
+    def add(self, item):
+        self.drop.append([datetime.now(), item])
+
+    def pickup_first(self, item_name):
+        for item in self.drop:
+            if item[1].name == item_name:
+                self.drop.remove(item)
+                return item[1]                
+
+    def update(self):
+        removed_items = []
+        for item in self.drop:
+            if (datetime.now() - item[0]).total_seconds() > self.drop_timeout:
+                removed_items.append(item)
+        for removed_item in removed_items:
+            self.drop.remove(removed_item)
+  
 
 class Game(threading.Thread):
     def __init__(self, agent):
         threading.Thread.__init__(self)
         self.agent = agent
         self.loop = True
-        self.zombie_factory = ZombieFactory()
-        self.weapon_factory = WeaponFactory()
+        self.loot_factory = LootFactory()
         self.zombies_pack = ZombiePack()
         self.zombies_spawner = ZombieSpawner()
         self.player = Player(20)
+        self.floor = Floor()
 
     def stop(self):
         self.loop = False
+
+    def on_loot(self):
+        self.floor.add(self.loot_factory.create_loot())
 
     def run(self):
         while(self.loop):

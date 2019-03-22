@@ -17,8 +17,6 @@ class WeaponFactory(object):
             return Pistol()
         elif index == 7:
             return Shootgun()
-        elif index == 8:
-            return Grenade()
 
 class Weapon(object):    
     def __init__(self):
@@ -147,25 +145,4 @@ class Shootgun(DistantWeapon):
         self.reload_message = "clic clac"
 
 
-class Grenade(object):
-    def __init__(self):
-        DistantWeapon.__init__(self)
-        self.name = "Grenade"
-        self.attack = 10
-        self.use_limit = 1
-        self.hit_message = "BOOM"
-        self.miss_message = "..."
-        self.out_of_ammo_message = "clic"
-        self.reload_message = "clic clac"
 
-    def use(self, zombie, agent):
-        if (self.number < self.limit):
-            self.number = self.number + 1
-            zombie.damage(self.attack)
-            agent.answer('BAM! ...')
-        else:
-            agent.answer('click!')
-
-    def reload(self, zombie, agent):
-        self.number = 0
-        agent.answer('click clack!')

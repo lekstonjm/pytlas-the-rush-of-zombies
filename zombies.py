@@ -1,5 +1,58 @@
 from random import random, randint
 from datetime import datetime
+from .scheduler import RandomScheduler
+
+
+class ZombiePack(object):
+    def __init__(self):
+        self.zombies = []
+
+    def add(self, zombie):
+        self.zombies.append(zombie)
+
+    def get_first(self, zombie_name):
+        for zombie in self.zombies:
+            if zombie.name == zombie_name:
+                return zombie
+
+    def update(self, game):
+        burried = []
+        for zombie in self.zombies:
+            if zombie.dead_again:
+                burried.append(zombie)
+                game.on_loot()
+            else:
+                zombie.update(game.player, game.agent)
+        for zombie in burried:
+            self.zombies.remove(zombie)
+
+class ZombieSpawner(object):
+    def __init__(self):
+        self.wanderer = RandomScheduler(5,10)
+        self.pack = RandomScheduler(20,30)
+        self.wanderer.plan()
+        self.pack.plan()
+        self.pack_size = 5
+        self.zombie_factory = ZombieFactory()
+    
+    def update(self, game):
+        if self.pack.check():
+            self.spawn_pack(game, self.pack_size)
+            self.pack.plan()
+            self.wanderer.plan()
+        if self.wanderer.check():
+            self.spawn_wanderer(game)
+            self.wanderer.plan()
+    
+    def spawn_wanderer(self, game):
+        zombie = self.zombie_factory.spawn_zombie()
+        game.zombies_pack.add(zombie)
+        game.agent.answer('{0} {1} {2}'.format(zombie.spawn_message, zombie.name, zombie.description))
+    
+    def spawn_pack(self, game, pack_size):
+        for _index in range(pack_size):
+            self.spawn_wanderer(game)
+
 
 class ZombieFactory(object):
     def spawn_zombie(self):
@@ -61,13 +114,13 @@ class BoozoTheClown(Zombie):
         self.description = "The decayed clown"
         self.slowness = 5.0
         self.attack_rate = 5.0
-        self.attack_level = random()*3.0 + 1.0
+        self.attack_level = randint(1,3)
         self.defense_level = 1.0
 
 
 class MikeThePoliceman(Zombie):
     def __init__(self):
-        Zombie.__init__()
+        Zombie.__init__(self)
         self.name = "Mike"
         self.description = "The policeman witout jaw"
         self.slowness = 4.0
@@ -78,9 +131,9 @@ class MikeThePoliceman(Zombie):
 
 class BobTheFat(Zombie):
     def __init__(self):
-        Zombie.__init__()
+        Zombie.__init__(self)
         self.name = "Bob"
-        self.description = "The fat wet guy coming from sewer"
+        self.description = "The fat wet hobo coming from sewer"
         self.slowness = 8.0
         self.attack_rate = 4.0
         self.attack_level = 10.0
@@ -98,7 +151,7 @@ class BobTheFat(Zombie):
 
 class KristalTheCheerleders(Zombie):
     def __init__(self):
-        Zombie.__init__()
+        Zombie.__init__(self)
         self.name = "Kristal"
         self.description = "The cheerleader with glue-like eyes and hanging arms"
         self.slowness = 4.0
@@ -108,7 +161,7 @@ class KristalTheCheerleders(Zombie):
 
 class JulienTheGeek(Zombie):
     def __init__(self):
-        Zombie.__init__()
+        Zombie.__init__(self)
         self.name = "Julien"
         self.description = "The creepy geek"
         self.slowness = 8.0
@@ -118,7 +171,7 @@ class JulienTheGeek(Zombie):
 
 class CarlTheRunner(Zombie):
     def __init__(self):
-        Zombie.__init__()
+        Zombie.__init__(self)
         self.name = "Carl"
         self.description = "The runner who wears a hoodie"
         self.slowness = 2.0

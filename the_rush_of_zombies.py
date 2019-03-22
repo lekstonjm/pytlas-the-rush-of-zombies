@@ -16,6 +16,32 @@ def en_data(): return """
 %[play]
   play to the rush of zombies
 
+%[rush_of_zombies/hit]
+  hit @[zombie_name]
+  kill @[zombie_name]
+  shoot @[zombie_name]
+
+@[zombie_name]
+  Mike
+  Kristal
+  Julien
+
+%[rush_of_zombies/throw]
+  throw @[item_name]
+
+%[rush_of_zombies/use]
+  use @[item_name]
+
+%[rush_of_zombies/pickup]
+  pick up @[item_name]
+  loot [@item_name]
+  get [@item_name]
+
+@[item_name]
+  bandage
+  grenade
+  knife
+
 %[rush_of_zombies/quit]
   quit the game
 """
