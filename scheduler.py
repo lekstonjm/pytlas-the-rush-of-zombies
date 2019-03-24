@@ -5,11 +5,12 @@ import random
 class RandomScheduler(object):
     def __init__(self, period_min, period_max):
         self.reference = datetime.now()
-        self.period = [period_min, period_max]
+        self.period_min = period_min
+        self.period_max = period_max
         self.delay = 0
     def plan(self):
         self.reference = datetime.now()
-        self.delay = (random.random() * (self.period[1] - self.period[0]) + self.period[0])
+        self.delay = (random.random() * (self.period_min - self.period_max) + self.period_min)
     def check(self):
         delay = (datetime.now() -self.reference).total_seconds()
         if delay > self.delay:

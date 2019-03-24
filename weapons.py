@@ -23,7 +23,7 @@ class Weapon(object):
         self.attack_level = 1
         self.hit_message = ""
         self.miss_message = ""
-    def use(self, game, zombi_name=None):
+    def use(self, game, zombi_name):
         pass
     def reload(self, game):        
         pass
@@ -31,12 +31,14 @@ class Weapon(object):
 class ContactWeapon(Weapon):
     def __init__(self):
         Weapon.__init__(self)
-    def use(self, game, zombi_name = None):
+
+    def use(self, game, zombi_name):
+        print('contact weapon use')
         zombie = None
         if zombi_name:
-            zombie = game.zombies.get_first(zombi_name)        
+            zombie = game.zombies_pack.get_first(zombi_name)        
         if zombie and zombie.state == zombie.CONTACT:
-            zombie.damage(self.attack_level)
+            zombie.damage(self.attack_level, game.agent)
             game.agent.answer(self.hit_message)
         else:
             game.agent.answer(self.miss_message)    
@@ -66,11 +68,15 @@ class DistantWeapon(Weapon):
         game.agent.answer(self.reload_message)
         pass
 
-class DisposableWeapon(Weapon):
+
+
+class Fist(ContactWeapon):
     def __init__(self):
-        Weapon.__init__(self)
-    def use(self, game, zombi_name=None):
-        damage = self.attack_level
+        ContactWeapon.__init__(self)
+        self.name = "Fist"
+        self.attack_level = 1
+        self.hit_message = "baf"
+        self.miss_message = "chuiit"
 
 
 class Knife(ContactWeapon):

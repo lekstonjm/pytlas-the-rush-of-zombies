@@ -16,7 +16,7 @@ def en_data(): return """
 %[play]
   play to the rush of zombies
 
-%[rush_of_zombies/hit]
+%[the_rush_of_zombies/hit]
   hit @[zombie_name]
   kill @[zombie_name]
   shoot @[zombie_name]
@@ -26,25 +26,25 @@ def en_data(): return """
   Kristal
   Julien
 
-%[rush_of_zombies/throw]
+%[the_rush_of_zombies/throw]
   throw @[item_name]
 
-%[rush_of_zombies/use]
+%[the_rush_of_zombies/use]
   use @[item_name]
 
-%[rush_of_zombies/pickup]
+%[the_rush_of_zombies/pickup]
   pick up @[item_name]
-  loot [@item_name]
-  get [@item_name]
+  get @[item_name]
 
 @[item_name]
   bandage
   grenade
   knife
 
-%[rush_of_zombies/quit]
+%[the_rush_of_zombies/quit]
   quit the game
 """
+
 
 agents =  {}
 games = {}
@@ -90,18 +90,34 @@ def on_play(req):
   if req.agent.id in games:
     req.agent.answer(req._('A game is already started'))
     return req.agent.done()
-  req.agent.context('rush_of_zombies')
+  req.agent.context('the_rush_of_zombies')
   game = Game(agents[req.agent.id])
   games[req.agent.id] = game
   game.start()
   req.agent.answer(req._('Don\'t panic! ... They are coming'))
   return req.agent.done()
 
-@intent('rush_of_zombies/quit')
+@intent('the_rush_of_zombies/hit')
+def on_hit(req):
+  print('on_hit')
+  zombie_name = req.intent.slot("zombie_name").first().value
+  if zombie_name == None:
+    return req.agent.ask('zombie_name',"Which one")
+  global games
+  if not req.agent.id in games:
+    req.agent.answer(req._('No game available start a game before'))
+    return req.agent.done()
+  game = games[req.agent.id]
+  game.player_hit(zombie_name)
+  return req.agent.done()
+
+
+@intent('the_rush_of_zombies/quit')
 def on_quit(req):
   try:
     stop_game(req.agent.id)
   except:
     req.agent.answer(req._("Error: Unable to stop the game"))
+  req.agent.context(None)
   req.agent.answer(req._("Bye"))
   return req.agent.done()

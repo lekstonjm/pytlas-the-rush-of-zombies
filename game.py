@@ -2,8 +2,8 @@ import threading
 import time
 import random
 from datetime import datetime
-from .zombies import ZombieFactory, ZombiePack, ZombieSpawner
-from .weapons import WeaponFactory
+from .zombies import ZombieFactory, ZombieSpawner
+from .weapons import WeaponFactory, Fist
 from .items import ItemFactory
 
 class LootFactory(object):
@@ -24,6 +24,7 @@ class Player(object):
     self.life = life
     self.is_dead = False
     self.weapon = None
+    self.fist = Fist()
     self.item = None
 
   def damage(self, amount,agent):
@@ -62,6 +63,30 @@ class Floor(object):
             self.drop.remove(removed_item)
   
 
+class ZombiePack(object):
+    def __init__(self):
+        self.zombies = []
+
+    def add(self, zombie):
+        self.zombies.append(zombie)
+
+    def get_first(self, zombie_name):
+        for zombie in self.zombies:
+            if zombie.name == zombie_name:
+                return zombie
+
+    def update(self, game):
+        burried = []
+        for zombie in self.zombies:
+            if zombie.dead_again:
+                burried.append(zombie)
+                game.on_loot()
+            else:
+                zombie.update(game.player, game.agent)
+        for zombie in burried:
+            self.zombies.remove(zombie)
+
+
 class Game(threading.Thread):
     def __init__(self, agent):
         threading.Thread.__init__(self)
@@ -77,7 +102,16 @@ class Game(threading.Thread):
         self.loop = False
 
     def on_loot(self):
-        self.floor.add(self.loot_factory.create_loot())
+        loot = self.loot_factory.create_loot()
+        self.agent('{0} fell on the floor'.format(loot.name))
+        self.floor.add(loot)
+    
+    def player_hit(self, zombie_name):
+        print('player_hit')
+        weapon = self.player.fist
+        if self.player.weapon:
+            weapon = self.player.weapon
+        weapon.use(self, zombie_name)
 
     def run(self):
         while(self.loop):

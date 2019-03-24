@@ -2,40 +2,19 @@ from random import random, randint
 from datetime import datetime
 from .scheduler import RandomScheduler
 
-
-class ZombiePack(object):
-    def __init__(self):
-        self.zombies = []
-
-    def add(self, zombie):
-        self.zombies.append(zombie)
-
-    def get_first(self, zombie_name):
-        for zombie in self.zombies:
-            if zombie.name == zombie_name:
-                return zombie
-
-    def update(self, game):
-        burried = []
-        for zombie in self.zombies:
-            if zombie.dead_again:
-                burried.append(zombie)
-                game.on_loot()
-            else:
-                zombie.update(game.player, game.agent)
-        for zombie in burried:
-            self.zombies.remove(zombie)
-
 class ZombieSpawner(object):
     def __init__(self):
-        self.wanderer = RandomScheduler(5,10)
-        self.pack = RandomScheduler(20,30)
+        self.wanderer = RandomScheduler(1,2)
+        self.pack = RandomScheduler(55,65)
+        self.zombies_limit = 1
         self.wanderer.plan()
         self.pack.plan()
         self.pack_size = 5
         self.zombie_factory = ZombieFactory()
     
     def update(self, game):
+        if len(game.zombies_pack.zombies) >= self.zombies_limit:
+            return
         if self.pack.check():
             self.spawn_pack(game, self.pack_size)
             self.pack.plan()
@@ -94,16 +73,19 @@ class Zombie(object):
         if (self.state == self.MOVING):
             if (delay > self.slowness):
                 agent.answer('Warning! {0} is on you'.format(self.name))
+                agent.done()
                 self.state = self.CONTACT
                 self.time_reference = datetime.now()
         elif (self.state == self.CONTACT):
             if (delay > self.attack_rate):
                 agent.answer('{0} is biting you'.format(self.name))
+                agent.done()
                 player.damage(self.attack_level, agent)
                 self.time_reference = datetime.now()
 
-    def damage(self, amount):
-        if self.defense_level < amount:
+    def damage(self, amount, agent):
+        if self.defense_level <= amount:
+            agent.answer(self.dead_again_message)
             self.dead_again = True
 
     
