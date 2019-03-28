@@ -1,19 +1,13 @@
-from random import randint
+from .loot import Loot
 
-class ItemFactory(object):
-    def create_item(self):
-        index = randint(1,5)
-        if index == 1:
-            return Grenade()
-        else:
-            return Bandage()
-
-class Item(object):
+class Item(Loot):
     def __init__(self):
-        object.__init__(self)
-        self.name = ""
+        Loot.__init__(self)
     def use(self, game, agent):
         pass
+    
+    def pickedup_by(self, player):
+        player.item = self
     
 
 class Grenade(Item):
@@ -34,7 +28,8 @@ class Bandage(Item):
         Item.__init__(self)
         self.name = "Bandage"
         self.healing_level = 2
-        self.use_message = "Frot! Frot!"    
+        self.use_message = "Frot! Frot!"   
+
     def use(self, game, agent):
         agent.answer(self.use_message)
         game.player.heal(self.healing_level)

@@ -4,3 +4,5 @@ from .game import *
 from .zombies import *
 from .items import *
 from .scheduler import *
+from .player import *
+from .loot import *

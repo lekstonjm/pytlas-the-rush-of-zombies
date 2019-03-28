@@ -1,26 +1,8 @@
-from random import randint
+from .loot import Loot
 
-class WeaponFactory(object):
-    def create_weapon(self):
-        index = randint(1,8)
-        if index == 1:
-            return Knife()
-        elif index == 2:
-            return BaseballBat()
-        elif index == 3:
-            return Katana()
-        elif index == 4:
-            return Crossbow()
-        elif index == 5:
-            return Revolver()
-        elif index == 6:
-            return Pistol()
-        elif index == 7:
-            return Shootgun()
-
-class Weapon(object):    
+class Weapon(Loot):    
     def __init__(self):
-        self.name = ""
+        Loot.__init__(self)
         self.attack_level = 1
         self.hit_message = ""
         self.miss_message = ""
@@ -28,6 +10,8 @@ class Weapon(object):
         pass
     def reload(self, game):        
         pass
+    def pickedup_by(self, player):
+        player.weapon = self
 
 class ContactWeapon(Weapon):
     def __init__(self):
