@@ -22,9 +22,9 @@ def en_data(): return """
   shoot @[zombie_name]
 
 @[zombie_name]
-  Mike
-  Kristal
-  Julien
+  mike
+  kristal
+  julien
 
 %[the_rush_of_zombies/throw]
   throw @[item_name]
@@ -35,6 +35,7 @@ def en_data(): return """
 %[the_rush_of_zombies/pickup]
   pick up @[item_name]
   get @[item_name]
+  take @[item_name]
 
 @[item_name]
   bandage
@@ -63,7 +64,6 @@ def stop_game(agt_id):
     if game.is_alive():
       raise Exception('game thread frozen')
 
-
 @on_agent_created()
 def when_an_agent_is_created(agt):
   # On conserve une référence à l'agent
@@ -77,7 +77,8 @@ def when_an_agent_is_destroyed(agt):
   global agents  
   stop_game(agt.id)
   agents.pop(agt.id, None)
-  
+
+
 @intent('help')
 def on_help(req):
   req.agent.answer(req._(help_en).format(version))
@@ -94,23 +95,51 @@ def on_play(req):
   game = Game(agents[req.agent.id])
   games[req.agent.id] = game
   game.start()
-  req.agent.answer(req._('Don\'t panic! ... They are coming'))
+  req.agent.answer(req._("Don't panic! ... They are coming"))
   return req.agent.done()
 
 @intent('the_rush_of_zombies/hit')
 def on_hit(req):
-  print('on_hit')
-  zombie_name = req.intent.slot("zombie_name").first().value
-  if zombie_name == None:
-    return req.agent.ask('zombie_name',"Which one")
   global games
   if not req.agent.id in games:
-    req.agent.answer(req._('No game available start a game before'))
+    req.agent.answer(req._('mmmm! No game is available. Start a new game'))
     return req.agent.done()
   game = games[req.agent.id]
+
+  zombie_name = req.intent.slot("zombie_name").first().value
+  if zombie_name == None:
+    return req.agent.ask('zombie_name',"Which one?")
+
   game.player_hit(zombie_name)
   return req.agent.done()
 
+@intent('the_rush_of_zombies/pickup')
+def on_pickup(req):
+  global games
+  if not req.agent.id in games:
+    req.agent.answer(req._('mmmm! No game is available. Start a new game'))
+    return req.agent.done()
+  game = games[req.agent.id]
+
+  item_name = req.intent.slot("item_name").first().value
+  if item_name == None:
+    return req.agent.ask('item_name', "Which one?")
+  game.player_pickup(item_name, req)
+  return req.agent.done()
+
+@intent('the_rush_of_zombies/on_use')
+def on_pickup(req):
+  global games
+  if not req.agent.id in games:
+    req.agent.answer(req._('mmmm! No game is available. Start a new game'))
+    return req.agent.done()
+  game = games[req.agent.id]
+
+  item_name = req.intent.slot("item_name").first().value
+  if item_name == None:
+    return req.agent.ask('item_name', "Which one?")
+  game.player_use(item_name, req)
+  return req.agent.done()
 
 @intent('the_rush_of_zombies/quit')
 def on_quit(req):
@@ -121,3 +150,4 @@ def on_quit(req):
   req.agent.context(None)
   req.agent.answer(req._("Bye"))
   return req.agent.done()
+

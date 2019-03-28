@@ -20,6 +20,7 @@ class WeaponFactory(object):
 
 class Weapon(object):    
     def __init__(self):
+        self.name = ""
         self.attack_level = 1
         self.hit_message = ""
         self.miss_message = ""
@@ -33,7 +34,6 @@ class ContactWeapon(Weapon):
         Weapon.__init__(self)
 
     def use(self, game, zombi_name):
-        print('contact weapon use')
         zombie = None
         if zombi_name:
             zombie = game.zombies_pack.get_first(zombi_name)        
@@ -90,7 +90,7 @@ class Knife(ContactWeapon):
 class BaseballBat(ContactWeapon):
     def __init__(self):
         ContactWeapon.__init__(self)
-        self.name = "Baseball bat"
+        self.name = "Bat"
         self.attack = 2
         self.hit_message = "PAF"
         self.miss_message = "fffouuuuuu"

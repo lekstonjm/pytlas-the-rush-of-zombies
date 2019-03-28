@@ -73,13 +73,11 @@ class Zombie(object):
         if (self.state == self.MOVING):
             if (delay > self.slowness):
                 agent.answer('Warning! {0} is on you'.format(self.name))
-                agent.done()
                 self.state = self.CONTACT
                 self.time_reference = datetime.now()
         elif (self.state == self.CONTACT):
             if (delay > self.attack_rate):
                 agent.answer('{0} is biting you'.format(self.name))
-                agent.done()
                 player.damage(self.attack_level, agent)
                 self.time_reference = datetime.now()
 

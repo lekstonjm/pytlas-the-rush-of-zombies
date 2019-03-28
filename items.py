@@ -11,6 +11,7 @@ class ItemFactory(object):
 class Item(object):
     def __init__(self):
         object.__init__(self)
+        self.name = ""
     def use(self, game, agent):
         pass
     

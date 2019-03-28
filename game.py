@@ -27,7 +27,7 @@ class Player(object):
     self.fist = Fist()
     self.item = None
 
-  def damage(self, amount,agent):
+  def damage(self, amount, agent):
     if self.is_dead: return
     self.life = self.life - amount
     agent.answer('You receive {0} damage. You have {1} life left'.format(amount, self.life))
@@ -40,6 +40,11 @@ class Player(object):
     agent.answer('You receive {0} healing. You have {1} life left'.format(amount, self.life))
     self.life = self.life + amount
   
+  def take(self, item, req):
+    self.item = item
+    return req.agent.answer(req._("You just picked up {0}").format(item.name))
+
+
 class Floor(object):
     def __init__(self):
         self.drop = []
@@ -50,9 +55,10 @@ class Floor(object):
 
     def pickup_first(self, item_name):
         for item in self.drop:
-            if item[1].name == item_name:
+            if item[1].name.lower() == item_name.lower():
                 self.drop.remove(item)
                 return item[1]                
+        return None
 
     def update(self):
         removed_items = []
@@ -72,8 +78,9 @@ class ZombiePack(object):
 
     def get_first(self, zombie_name):
         for zombie in self.zombies:
-            if zombie.name == zombie_name:
+            if zombie.name.lower() == zombie_name.lower():
                 return zombie
+        return None
 
     def update(self, game):
         burried = []
@@ -103,15 +110,25 @@ class Game(threading.Thread):
 
     def on_loot(self):
         loot = self.loot_factory.create_loot()
-        self.agent('{0} fell on the floor'.format(loot.name))
+        self.agent.answer('{0} fell on the floor'.format(loot.name))
         self.floor.add(loot)
     
     def player_hit(self, zombie_name):
-        print('player_hit')
         weapon = self.player.fist
         if self.player.weapon:
             weapon = self.player.weapon
         weapon.use(self, zombie_name)
+    
+    def player_pickup(self, item_name, req):
+        item = self.floor.pickup_first(item_name)
+        if item == None:
+            return req.agent.answer(req._("You don't see any {0} on the floor").format(item_name))
+        self.player.take(item, req)
+
+    def player_use(self, item_name, req):
+        if self.player.item.name.lower() != item_name.lower():
+            return req.agent.answer(req._("You don't have any {0}".format(item_name)))
+        return self.player.item.use(self, req.agent)        
 
     def run(self):
         while(self.loop):
