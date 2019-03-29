@@ -10,8 +10,6 @@ class ItemFactory(object):
         else:
             return Bandage()
 
-
-
 class WeaponFactory(object):
     def create_weapon(self):
         index = random.randint(1,8)
@@ -37,8 +35,8 @@ class LootFactory(object):
         self.item_factory = ItemFactory()
     
     def create_loot(self):
-        number = random.randint(1,2)
-        if number == 1:
+        number = random.randint(1,3)
+        if number <= 2:
             return self.item_factory.create_item()
         else: 
             return self.weapon_factory.create_weapon()

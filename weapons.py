@@ -4,8 +4,6 @@ class Weapon(Loot):
     def __init__(self):
         Loot.__init__(self)
         self.attack_level = 1
-        self.hit_message = ""
-        self.miss_message = ""
     def use(self, game, zombi_name):
         pass
     def reload(self, game):        
@@ -17,15 +15,17 @@ class ContactWeapon(Weapon):
     def __init__(self):
         Weapon.__init__(self)
 
-    def use(self, game, zombi_name):
+    def use(self, game, zombi_name, message_handler):
         zombie = None
         if zombi_name:
             zombie = game.zombies_pack.get_first(zombi_name)        
         if zombie and zombie.state == zombie.CONTACT:
+            message_handler.on_hit(self.name)
             zombie.damage(self.attack_level, game.agent)
-            game.agent.answer(self.hit_message)
+            #game.agent.answer(self.hit_message)
         else:
-            game.agent.answer(self.miss_message)    
+            message_handler.on_miss(self.name)
+            #game.agent.answer(self.miss_message)    
         
 class DistantWeapon(Weapon):
     def __init__(self):
@@ -37,7 +37,7 @@ class DistantWeapon(Weapon):
     def use(self, game, zombi_name = None):
         zombie = None
         if zombi_name:
-            zombie = game.zombies.get_first(zombi_name)        
+            zombie = game.zombies_pack.get_first(zombi_name)        
         if zombie:
             if self.use_number > self.use_limit :
                 game.agent.answer(self.out_of_ammo_message)
@@ -52,41 +52,30 @@ class DistantWeapon(Weapon):
         game.agent.answer(self.reload_message)
         pass
 
-
-
 class Fist(ContactWeapon):
     def __init__(self):
         ContactWeapon.__init__(self)
-        self.name = "Fist"
+        self.name = "fist"
         self.attack_level = 1
-        self.hit_message = "baf"
-        self.miss_message = "chuiit"
 
 
 class Knife(ContactWeapon):
     def __init__(self):
         ContactWeapon.__init__(self)
-        self.name = "Knife"
+        self.name = "knife"
         self.attack_level = 1
-        self.hit_message = "scroutch"
-        self.miss_message = "ffffffweet"
 
 class BaseballBat(ContactWeapon):
     def __init__(self):
         ContactWeapon.__init__(self)
-        self.name = "Bat"
+        self.name = "bat"
         self.attack = 2
-        self.hit_message = "PAF"
-        self.miss_message = "fffouuuuuu"
 
 class Katana(ContactWeapon):
     def __init__(self):
         ContactWeapon.__init__(self)
         self.name = "Katana"
         self.attack = 3
-        self.hit_message = "Tchac"
-        self.miss_message = "shhwwinnnng"
-
 
 class Crossbow(DistantWeapon):
     def __init__(self):
@@ -94,10 +83,6 @@ class Crossbow(DistantWeapon):
         self.name = "Crossbow"
         self.attack = 1
         self.use_limit = 1
-        self.hit_message = "Chhh poc"
-        self.miss_message = "sssssss"
-        self.out_of_ammo_message = "click"
-        self.reload_message = "ccrrrriiii Clic"
 
 class Revolver(DistantWeapon):
     def __init__(self):
@@ -105,10 +90,6 @@ class Revolver(DistantWeapon):
         self.name = "Revolver"
         self.attack = 3
         self.use_limit = 6
-        self.hit_message = "PAN"
-        self.miss_message = "fffwweeeee"
-        self.out_of_ammo_message = "clic"
-        self.reload_message = "clic clac"
 
 
 class Pistol(DistantWeapon):
@@ -117,10 +98,6 @@ class Pistol(DistantWeapon):
         self.name = "Pistol"
         self.attack = 2
         self.use_limit = 15
-        self.hit_message = "pan"
-        self.miss_message = "fffwweeeee"
-        self.out_of_ammo_message = "clic"
-        self.reload_message = "clic clac"
 
 
 class Shootgun(DistantWeapon):
@@ -129,10 +106,6 @@ class Shootgun(DistantWeapon):
         self.name = "Shootgun"
         self.attack = 4
         self.use_limit = 2
-        self.hit_message = "BAM"
-        self.miss_message = "..."
-        self.out_of_ammo_message = "clic"
-        self.reload_message = "clic clac"
 
 
 

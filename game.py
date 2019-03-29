@@ -74,11 +74,11 @@ class Game(threading.Thread):
         self.agent.answer('{0} fell on the floor'.format(loot.name))
         self.floor.add(loot)
     
-    def player_hit(self, zombie_name):
+    def player_hit(self, zombie_name, message_handler):
         weapon = self.player.fist
         if self.player.weapon:
             weapon = self.player.weapon
-        weapon.use(self, zombie_name)
+        weapon.use(self, zombie_name, message_handler)
     
     def player_pickup(self, item_name, req):
         item = self.floor.pickup_first(item_name)

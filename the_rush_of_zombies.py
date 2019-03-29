@@ -4,48 +4,7 @@ from uuid import uuid4
 from .game import Game 
 # This entity will be shared among training data since it's not language specific
 
-help_en = """
-A skill that will make you shudder.
-"""
-
-@training('en')
-def en_data(): return """
-%[help]
-  what is the rush of zombies skill
-
-%[play]
-  play to the rush of zombies
-
-%[the_rush_of_zombies/hit]
-  hit @[zombie_name]
-  kill @[zombie_name]
-  shoot @[zombie_name]
-
-@[zombie_name]
-  mike
-  kristal
-  julien
-
-%[the_rush_of_zombies/throw]
-  throw @[item_name]
-
-%[the_rush_of_zombies/use]
-  use @[item_name]
-
-%[the_rush_of_zombies/pickup]
-  pick up @[item_name]
-  get @[item_name]
-  take @[item_name]
-
-@[item_name]
-  bandage
-  grenade
-  knife
-
-%[the_rush_of_zombies/quit]
-  quit the game
-"""
-
+from .message import *
 
 agents =  {}
 games = {}
@@ -109,8 +68,8 @@ def on_hit(req):
   zombie_name = req.intent.slot("zombie_name").first().value
   if zombie_name == None:
     return req.agent.ask('zombie_name',"Which one?")
-
-  game.player_hit(zombie_name)
+  message_handler = MessageHandler(messages, req.agent, req._)
+  game.player_hit(zombie_name, message_handler)
   return req.agent.done()
 
 @intent('the_rush_of_zombies/pickup')
@@ -127,8 +86,8 @@ def on_pickup(req):
   game.player_pickup(item_name, req)
   return req.agent.done()
 
-@intent('the_rush_of_zombies/on_use')
-def on_pickup(req):
+@intent('the_rush_of_zombies/use')
+def on_use(req):
   global games
   if not req.agent.id in games:
     req.agent.answer(req._('mmmm! No game is available. Start a new game'))
