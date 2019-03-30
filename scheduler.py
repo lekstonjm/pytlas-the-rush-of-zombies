@@ -8,9 +8,12 @@ class RandomScheduler(object):
         self.period_min = period_min
         self.period_max = period_max
         self.delay = 0
-    def plan(self):
+    def plan(self, now = False):
         self.reference = datetime.now()
-        self.delay = (random.random() * (self.period_min - self.period_max) + self.period_min)
+        if now:
+            self.delay = 0
+        else:
+            self.delay = (random.random() * (self.period_min - self.period_max) + self.period_min)
     def check(self):
         delay = (datetime.now() -self.reference).total_seconds()
         if delay > self.delay:

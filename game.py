@@ -43,22 +43,25 @@ class ZombiePack(object):
                 return zombie
         return None
 
-    def update(self, game):
+    def update(self, message_handler, game):
         burried = []
         for zombie in self.zombies:
             if zombie.dead_again:
                 burried.append(zombie)
-                game.on_loot()
+                loot = game.loot_factory.create_loot()
+                message_handler.on_loot(loot.name)
+                #self.agent.answer('{0} fell on the floor'.format(loot.name))
+                game.floor.add(loot)
             else:
-                zombie.update(game.player, game.agent)
+                zombie.update(message_handler, game)
         for zombie in burried:
             self.zombies.remove(zombie)
 
 
 class Game(threading.Thread):
-    def __init__(self, agent):
+    def __init__(self, message_handler):
         threading.Thread.__init__(self)
-        self.agent = agent
+        self.message_handler_thread = message_handler
         self.loop = True
         self.loot_factory = LootFactory()
         self.zombies_pack = ZombiePack()
@@ -69,33 +72,22 @@ class Game(threading.Thread):
     def stop(self):
         self.loop = False
 
-    def on_loot(self):
-        loot = self.loot_factory.create_loot()
-        self.agent.answer('{0} fell on the floor'.format(loot.name))
-        self.floor.add(loot)
+    def player_hit(self, message_handler, zombie_name):
+        return self.player.hit(message_handler, self, zombie_name)
     
-    def player_hit(self, zombie_name, message_handler):
-        weapon = self.player.fist
-        if self.player.weapon:
-            weapon = self.player.weapon
-        weapon.use(self, zombie_name, message_handler)
-    
-    def player_pickup(self, item_name, req):
-        item = self.floor.pickup_first(item_name)
-        if item == None:
-            return req.agent.answer(req._("You don't see any {0} on the floor").format(item_name))
-        self.player.take(item, req)
+    def player_pickup(self, message_handler, loot_name):
+        return self.player.pickup(message_handler, self, loot_name)
 
-    def player_use(self, item_name, req):
-        if self.player.item.name.lower() != item_name.lower():
-            return req.agent.answer(req._("You don't have any {0}".format(item_name)))
-        return self.player.item.use(self, req.agent)        
+    def player_use(self, message_handler, item_name):
+        return self.player.use(message_handler, self, item_name)        
 
     def run(self):
+        message_handler = self.message_handler_thread
+        self.message_handler_thread = None
         while(self.loop):
             if not self.player.is_dead:
-                self.zombies_pack.update(self)
-                self.zombies_spawner.update(self)
+                self.zombies_pack.update(message_handler, self)
+                self.zombies_spawner.update(message_handler, self)
             time.sleep(1.0)
 
 

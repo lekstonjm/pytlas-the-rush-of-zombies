@@ -3,33 +3,34 @@ from .loot import Loot
 class Item(Loot):
     def __init__(self):
         Loot.__init__(self)
-    def use(self, game, agent):
-        pass
-    
-    def pickedup_by(self, player):
+
+    def use(self, message_handler, player, game, target_name = None):
+        message_handler.on_use(self.name)
+        player.item = None
+
+    def pickedup_by(self, message_handler, player):
+        if player.item != None:
+            message_handler.on_drop(player.item.name)
         player.item = self
-    
 
 class Grenade(Item):
     def __init__(self):
         Item.__init__(self)
-        self.name = "Grenade"
+        self.name = "grenade"
         self.attack_level = 10
-        self.use_message = "BOOM"    
 
-    def use(self, game, agent):
-        agent.answer(self.use_message)
+    def use(self, message_handler,player, game, target_name = None):
+        Item.use(self, message_handler, player, game, target_name)
         for zombie in game.zombies:
-            zombie.damage(self.attack_level)
+            zombie.damage(message_handler, self.attack_level)
             self.attack_level = self.attack_level - zombie.defense_level
                 
 class Bandage(Item):
     def __init__(self):
         Item.__init__(self)
-        self.name = "Bandage"
+        self.name = "bandage"
         self.healing_level = 2
-        self.use_message = "Frot! Frot!"   
 
-    def use(self, game, agent):
-        agent.answer(self.use_message)
-        game.player.heal(self.healing_level)
+    def use(self, message_handler, player, game, target_name = None):
+        Item.use(self, message_handler, player, game, target_name)
+        player.heal(message_handler, self.healing_level)

@@ -3,6 +3,8 @@ class Loot(object):
         object.__init__(self)
         self.name = ""
 
-    def pickedup_by(self, player):
+    def pickedup_by(self, message_handler, player):
         pass
 
+    def use(self, message_handler, game, target_name = None):
+        pass

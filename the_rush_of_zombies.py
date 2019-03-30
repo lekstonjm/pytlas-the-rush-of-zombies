@@ -40,73 +40,84 @@ def when_an_agent_is_destroyed(agt):
 
 @intent('help')
 def on_help(req):
-  req.agent.answer(req._(help_en).format(version))
+  message_handler = MessageHandler(req.agent, req._)
+  message_handler.on_help(version)
   return req.agent.done()
 
 @intent('play')
 def on_play(req):
   global games
   global agents
+  message_handler = MessageHandler(req.agent, req._)
   if req.agent.id in games:
-    req.agent.answer(req._('A game is already started'))
+    message_handler.on_game_exists()
     return req.agent.done()
   req.agent.context('the_rush_of_zombies')
-  game = Game(agents[req.agent.id])
+  
+  agent_async = agents[req.agent.id]
+  message_handler = MessageHandler(agent_async, req._)
+
+  game = Game(message_handler)
   games[req.agent.id] = game
   game.start()
-  req.agent.answer(req._("Don't panic! ... They are coming"))
+  message_handler.on_welcome()
   return req.agent.done()
 
 @intent('the_rush_of_zombies/hit')
 def on_hit(req):
   global games
+  message_handler = MessageHandler(req.agent, req._)
   if not req.agent.id in games:
-    req.agent.answer(req._('mmmm! No game is available. Start a new game'))
+    message_handler.on_game_already_exists()
     return req.agent.done()
   game = games[req.agent.id]
 
   zombie_name = req.intent.slot("zombie_name").first().value
   if zombie_name == None:
-    return req.agent.ask('zombie_name',"Which one?")
-  message_handler = MessageHandler(messages, req.agent, req._)
-  game.player_hit(zombie_name, message_handler)
+    return message_handler.on_ask_zombie_name()
+  game.player_hit(message_handler, zombie_name)
   return req.agent.done()
 
 @intent('the_rush_of_zombies/pickup')
 def on_pickup(req):
   global games
+  message_handler = MessageHandler(req.agent, req._)
   if not req.agent.id in games:
-    req.agent.answer(req._('mmmm! No game is available. Start a new game'))
+    message_handler.on_game_already_exists()
     return req.agent.done()
   game = games[req.agent.id]
 
   item_name = req.intent.slot("item_name").first().value
   if item_name == None:
-    return req.agent.ask('item_name', "Which one?")
-  game.player_pickup(item_name, req)
+    return message_handler.on_ask_item_name()
+  game.player_pickup(message_handler, item_name)
   return req.agent.done()
 
 @intent('the_rush_of_zombies/use')
 def on_use(req):
   global games
+  message_handler = MessageHandler(req.agent, req._)
   if not req.agent.id in games:
-    req.agent.answer(req._('mmmm! No game is available. Start a new game'))
+    message_handler.on_game_already_exists()
     return req.agent.done()
   game = games[req.agent.id]
 
   item_name = req.intent.slot("item_name").first().value
   if item_name == None:
-    return req.agent.ask('item_name', "Which one?")
-  game.player_use(item_name, req)
+    return message_handler.on_ask_item_name()
+  game.player_use(message_handler, item_name)
   return req.agent.done()
 
 @intent('the_rush_of_zombies/quit')
 def on_quit(req):
+  message_handler = MessageHandler(req.agent, req._)
   try:
     stop_game(req.agent.id)
   except:
-    req.agent.answer(req._("Error: Unable to stop the game"))
+    message_handler.on_unable_to_stop()
+    #req.agent.answer(req._("Error: Unable to stop the game"))
   req.agent.context(None)
-  req.agent.answer(req._("Bye"))
+  message_handler.on_quit()
+  #req.agent.answer(req._("Bye"))
   return req.agent.done()
 

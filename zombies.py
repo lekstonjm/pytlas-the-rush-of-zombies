@@ -4,33 +4,34 @@ from .scheduler import RandomScheduler
 
 class ZombieSpawner(object):
     def __init__(self):
-        self.wanderer = RandomScheduler(1,2)
-        self.pack = RandomScheduler(55,65)
-        self.zombies_limit = 1
-        self.wanderer.plan()
+        self.wanderer = RandomScheduler(30,40)
+        self.pack = RandomScheduler(60,120)
+        self.zombies_limit = 2
+        self.wanderer.plan(True)
         self.pack.plan()
         self.pack_size = 5
         self.zombie_factory = ZombieFactory()
     
-    def update(self, game):
+    def update(self, message_handler, game):
         if len(game.zombies_pack.zombies) >= self.zombies_limit:
             return
         if self.pack.check():
-            self.spawn_pack(game, self.pack_size)
+            self.spawn_pack(message_handler, game, self.pack_size)
             self.pack.plan()
             self.wanderer.plan()
-        if self.wanderer.check():
-            self.spawn_wanderer(game)
+        elif self.wanderer.check():
+            self.spawn_wanderer(message_handler, game)
             self.wanderer.plan()
     
-    def spawn_wanderer(self, game):
+    def spawn_wanderer(self,message_handler, game):
         zombie = self.zombie_factory.spawn_zombie()
         game.zombies_pack.add(zombie)
-        game.agent.answer('{0} {1} {2}'.format(zombie.spawn_message, zombie.name, zombie.description))
+        message_handler.on_zombie_spawn(zombie.name)
+        #game.agent.answer('{0} {1} {2}'.format(zombie.spawn_message, zombie.name, zombie.description))
     
-    def spawn_pack(self, game, pack_size):
+    def spawn_pack(self, message_handler, game, pack_size):
         for _index in range(pack_size):
-            self.spawn_wanderer(game)
+            self.spawn_wanderer(message_handler, game)
 
 
 class ZombieFactory(object):
@@ -55,9 +56,6 @@ class Zombie(object):
         self.MOVING = 0
         self.CONTACT = 1
         self.name = ""
-        self.description = ""
-        self.spawn_message = "gggrrrr"
-        self.dead_again_message = "rrrggg"
         self.time_reference = datetime.now()
         self.slowness = 0
         self.attack_rate = 0
@@ -66,32 +64,33 @@ class Zombie(object):
         self.state = self.MOVING
         self.dead_again = False
 
-    def update(self, player, agent):
+    def update(self, message_handler, game):
         if self.dead_again:
             return
         delay = (datetime.now() - self.time_reference).total_seconds()
         if (self.state == self.MOVING):
             if (delay > self.slowness):
-                agent.answer('Warning! {0} is on you'.format(self.name))
+                message_handler.on_zombie_contact(self.name)
                 self.state = self.CONTACT
                 self.time_reference = datetime.now()
         elif (self.state == self.CONTACT):
             if (delay > self.attack_rate):
-                agent.answer('{0} is biting you'.format(self.name))
-                player.damage(self.attack_level, agent)
+                message_handler.on_zombie_bite(self.name)
+                #agent.answer('{0} is biting you'.format(self.name))
+                game.player.damage(message_handler, self.attack_level)
                 self.time_reference = datetime.now()
 
-    def damage(self, amount, agent):
+    def damage(self, message_handler, amount):
+        message_handler.on_zombie_damage(self.name, amount)
         if self.defense_level <= amount:
-            agent.answer(self.dead_again_message)
+            message_handler.on_zombie_dead_again(self.name)
             self.dead_again = True
 
     
 class BoozoTheClown(Zombie):
     def __init__(self):
         Zombie.__init__(self)
-        self.name = "Boozo"
-        self.description = "The decayed clown"
+        self.name = "boozo"
         self.slowness = 5.0
         self.attack_rate = 5.0
         self.attack_level = randint(1,3)
@@ -101,8 +100,7 @@ class BoozoTheClown(Zombie):
 class MikeThePoliceman(Zombie):
     def __init__(self):
         Zombie.__init__(self)
-        self.name = "Mike"
-        self.description = "The policeman witout jaw"
+        self.name = "mike"
         self.slowness = 4.0
         self.attack_rate = 4.0
         self.attack_level = 1.0
@@ -112,28 +110,25 @@ class MikeThePoliceman(Zombie):
 class BobTheFat(Zombie):
     def __init__(self):
         Zombie.__init__(self)
-        self.name = "Bob"
-        self.description = "The fat wet hobo coming from sewer"
+        self.name = "bob"
         self.slowness = 8.0
         self.attack_rate = 4.0
-        self.attack_level = 10.0
+        self.attack_level = 8.0
         self.defense_level = 2.0
 
-    def update(self, player, agent):
+    def update(self, message_handler, game):
         delay = (datetime.now() - self.time_reference).total_seconds()
         if (self.state == self.MOVING):
             if (delay > self.slowness):
-                agent.answer(
-                    '{0} explodes throwing decayed flesh and bones around him'.format(self.name))
-                player.damage(self.attack_level, agent)
+                message_handler.on_zombie_explode(self.name)
+                game.player.damage(message_handler, self.attack_level)
                 self.dead_again = True
 
 
 class KristalTheCheerleders(Zombie):
     def __init__(self):
         Zombie.__init__(self)
-        self.name = "Kristal"
-        self.description = "The cheerleader with glue-like eyes and hanging arms"
+        self.name = "kristal"
         self.slowness = 4.0
         self.attack_rate = 3.0
         self.attack_level = 1.0
@@ -142,8 +137,7 @@ class KristalTheCheerleders(Zombie):
 class JulienTheGeek(Zombie):
     def __init__(self):
         Zombie.__init__(self)
-        self.name = "Julien"
-        self.description = "The creepy geek"
+        self.name = "julien"
         self.slowness = 8.0
         self.attack_rate = 1.0
         self.attack_level = 1.0
@@ -152,8 +146,7 @@ class JulienTheGeek(Zombie):
 class CarlTheRunner(Zombie):
     def __init__(self):
         Zombie.__init__(self)
-        self.name = "Carl"
-        self.description = "The runner who wears a hoodie"
+        self.name = "carl"
         self.slowness = 2.0
         self.attack_rate = 5.0
         self.attack_level = 1.0
